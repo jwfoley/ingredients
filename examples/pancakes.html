@@ -1,0 +1,86 @@
+<dl><meta name="viewport" content="initial-scale=1"></dl>
+
+<h1>Background</h1>
+<p>I make this recipe frequently. It's based on <a href="https://www.allrecipes.com/recipe/191885/vegan-pancakes/">this one</a> but I find the pancakes are too oily if you oil the griddle, and if you just use a nonstick pan it's fine. It's vegan and <strong>it's also very easy</strong>. It's good with all kinds of toppings but trying to mix them into the batter usually ends in sadness. Blah blah blah.</p>
+<h1>Equipment</h1>
+<ul>
+<li>small bowl</li>
+<li>large bowl</li>
+<li>nonstick griddle or wide pan</li>
+<li>stove</li>
+</ul>
+<h1>Ingredients</h1>
+<dl>
+    <form name="ingredients">
+
+        <!--hardcoded default values-->
+        <input type="hidden" name="default0" value="1.25">
+        <input type="hidden" name="default1" value="2">
+        <input type="hidden" name="default2" value="2">
+        <input type="hidden" name="default3" value="0.5">
+        <input type="hidden" name="default4" value="1.25">
+        <input type="hidden" name="default5" value="1">
+        <input type="hidden" name="default6" value="1">
+
+        <!--scale controls-->
+        batches: <input name="scale" value=1 onInput="
+            document.ingredients.amount0.value = document.ingredients.scale.value * document.ingredients.default0.value;
+            document.ingredients.amount1.value = document.ingredients.scale.value * document.ingredients.default1.value;
+            document.ingredients.amount2.value = document.ingredients.scale.value * document.ingredients.default2.value;
+            document.ingredients.amount3.value = document.ingredients.scale.value * document.ingredients.default3.value;
+            document.ingredients.amount4.value = document.ingredients.scale.value * document.ingredients.default4.value;
+            document.ingredients.amount5.value = document.ingredients.scale.value * document.ingredients.default5.value;
+            document.ingredients.amount6.value = document.ingredients.scale.value * document.ingredients.default6.value;
+        ">
+        <input type="reset" value="Reset">
+
+        <!--automatically calculated fields-->
+        <table>
+            <tr>
+                <td>flour</td>
+                <td><input name="amount0" value="1.25" readonly> c</td>
+            </tr>
+            <tr>
+                <td>sugar or Splenda</td>
+                <td><input name="amount1" value="2" readonly> tbsp</td>
+            </tr>
+            <tr>
+                <td>baking powder</td>
+                <td><input name="amount2" value="2" readonly> tsp</td>
+            </tr>
+            <tr>
+                <td>salt</td>
+                <td><input name="amount3" value="0.5" readonly> tsp</td>
+            </tr>
+            <tr>
+                <td>water</td>
+                <td><input name="amount4" value="1.25" readonly> c</td>
+            </tr>
+            <tr>
+                <td>oil</td>
+                <td><input name="amount5" value="1" readonly> tbsp</td>
+            </tr>
+            <tr>
+                <td>vanilla extract or imitation vanilla</td>
+                <td><input name="amount6" value="1" readonly> tbsp</td>
+            </tr>
+        </table>
+
+    </form>
+</dl>
+
+<h1>Directions</h1>
+<h2>Preparing the batter</h2>
+<ul>
+<li>[ ] Sift the flour, sugar, baking powder, and salt into a large bowl.</li>
+<li>[ ] Whisk the water and oil together in a small bowl.</li>
+<li>[ ] Make a well in the center of the dry ingredients, and pour in the wet.</li>
+<li>[ ] Stir just until blended; mixture will be lumpy.</li>
+</ul>
+<h2>Cooking the cakes</h2>
+<ul>
+<li>[ ] Heat the griddle over medium-high heat (360 F on induction).</li>
+<li>[ ] Drop batter by large spoonfuls onto the griddle, and cook until bubbles form and the edges are dry.</li>
+<li>[ ] Flip, and cook until browned on the other side.</li>
+<li>[ ] Repeat with remaining batter.</li>
+</ul>
