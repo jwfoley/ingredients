@@ -35,6 +35,8 @@ a complete example:
 
 the result will be a simple HTML table of ingredients and amounts, except each amount is automatically scaled from an interactive text box that sets the number of batches, which can be reset to 1 with a neighboring button
 
+anyone can view the HTML output in any modern web browser without installing this or any other software
+
 more features to come
 
 # simple command-line usage
