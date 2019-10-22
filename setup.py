@@ -12,7 +12,7 @@ except:
 # Read version from package.
 from ingredients.__version__ import __version__
 
-setup(name='genomerator',
+setup(name='ingredients',
       version=__version__,
       author='Joseph W. Foley',
       author_email='joe+github@jwfoley.com',
