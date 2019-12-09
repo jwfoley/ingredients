@@ -1,10 +1,7 @@
 import re, markdown
 from lxml import etree, html
 
-DIRECTIONS_OPEN = '<directions>'
-DIRECTIONS_CLOSE = '</directions>'
-DIRECTIONS_HEADER = '<dl>'
-DIRECTIONS_FOOTER = '</dl>'
+DIRECTION_REGEX = '^\* \[ \] ' # matches GFM "* [ ] "
 DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label><p>'
 
 INGREDIENTS_TAG = 'ingredients' # appears as an HTML tag
@@ -15,26 +12,26 @@ DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">'] # think ha
 class Directions (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
 		new_lines = []
-		in_section = False # track whether we are currently in the section
+		in_section = False # track whether we are currently in a direction list (currently not used but might be nice if I use an HTML list)
 		
 		for line in lines:
-			if in_section: # currently in the section
-				if DIRECTIONS_CLOSE in line: # find end of section
-					lines.append(DIRECTIONS_FOOTER)
-					in_section = False
-					
-				else: # parse a line of the section
-					lines.append(DIRECTIONS_FORMAT % line)
-				
-			elif DIRECTIONS_OPEN in line: # find beginning of section
-				lines.append(DIRECTIONS_HEADER)
-				in_section = True
+			match = re.match(DIRECTION_REGEX, line)
 			
-			else:
-				new_lines.append(line)
+			if in_section: # currently in a direction list
+				if match: # still in the direction list
+					new_lines.append(DIRECTIONS_FORMAT % line[match.end():])
+				else: # end of the direction list
+					new_lines.append(line)
+			
+			else: # not currently in a direction list
+				if match: # start of a new direction list
+					new_lines.append(DIRECTIONS_FORMAT % line[match.end():])
+				else: # still not in a direction list
+					new_lines.append(line)
 		
 		if in_section: raise RuntimeError('missing %s tag' % DIRECTIONS_CLOSE)
 		return new_lines
+
 
 def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 'batches', checkbox = True):
 	'''
@@ -106,9 +103,6 @@ def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 
 
 
 class Ingredients (markdown.preprocessors.Preprocessor):
-	def __init__ (self, default_scale_name = 'batches'):
-		self.default_scale_name = default_scale_name
-	
 	def run (self, lines):
 		parsed_html = html.fromstring('\n'.join(lines))
 		ingredients_counter = 0
@@ -125,6 +119,7 @@ class Ingredients (markdown.preprocessors.Preprocessor):
 class IngredientExtension (markdown.extensions.Extension):
 	def extendMarkdown (self, md):
 		md.preprocessors.register(Ingredients(), 'ingredients', 175) # 175 is the suggested priority in the tutorial
+		md.preprocessors.register(Directions(), 'directions', 174)
 
 def makeExtension (**kwargs):
 	'''
