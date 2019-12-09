@@ -6,6 +6,7 @@ DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label><p>'
 
 INGREDIENTS_TAG = 'ingredients' # appears as an HTML tag
 INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
+DEFAULT_SCALE_NAME = 'batches'
 
 DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">'] # think harder about where to put this
 
@@ -33,10 +34,21 @@ class Directions (markdown.preprocessors.Preprocessor):
 		return new_lines
 
 
-def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 'batches', checkbox = True):
+def generate_ingredient_table (element, form_name = None, scale_name = None, checkbox = True):
 	'''
 	given an lxml.etree.Element of tag 'ingredients', return a new Element in the form of an HTML form containing the interactive table
 	'''
+	if form_name is None:
+		if 'form_name' in element.keys():
+			form_name = element.get('form_name')
+		else:
+			form_name = 'ingredients'
+	
+	if scale_name is None:
+		if 'scale_name' in element.keys():
+			scale_name = element.get('scale_name')
+		else:
+			scale_name = DEFAULT_SCALE_NAME
 
 	# parse the text contents
 	ingredients = []
