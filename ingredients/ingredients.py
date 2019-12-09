@@ -8,6 +8,7 @@ DIRECTIONS_FOOTER = '</dl>'
 DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label><p>'
 
 INGREDIENTS_TAG = 'ingredients' # appears as an HTML tag
+INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 
 DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">'] # think harder about where to put this
 
@@ -50,8 +51,16 @@ def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 
 		
 	# create the new Element
 		
-	form_root = etree.Element('form', {'name': form_name})
-	form_root.text = scale_name + ': '
+	form_root = etree.Element('form', {
+		'name': form_name,
+		'style': INGREDIENTS_STYLE
+	})
+	if 'title' in element.keys():
+		form_title = etree.SubElement(form_root, 'h4')
+		form_title.text = element.get('title')
+		form_title.tail = scale_name + ': '
+	else:
+		form_root.text = scale_name + ': '
 	
 	# hardcoded default values
 	for i in range(len(ingredients)):
