@@ -35,7 +35,7 @@ class Directions (markdown.preprocessors.Preprocessor):
 		if in_section: raise RuntimeError('missing %s tag' % DIRECTIONS_CLOSE)
 		return new_lines
 
-def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 'batches'):
+def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 'batches', checkbox = True):
 	'''
 	given an lxml.etree.Element of tag 'ingredients', return a new Element in the form of an HTML form containing the interactive table
 	'''
@@ -77,8 +77,14 @@ def generate_ingredient_table (element, form_name = 'ingredients', scale_name = 
 	form_table = etree.SubElement(form_root, 'table')
 	for i in range(len(ingredients)):
 		row = etree.SubElement(form_table, 'tr')
+		
 		field1 = etree.SubElement(row, 'td')
-		field1.text = ingredients[i][0]
+		if checkbox:
+			field1_checkbox = etree.SubElement(etree.SubElement(field1, 'label'), 'input', {'type': 'checkbox'}) # insert the checkbox input inside a label so the entire text is clickable
+			field1_checkbox.tail = ingredients[i][0]
+		else:
+			field1.text = ingredients[i][0]
+		
 		field2 = etree.SubElement(row, 'td')
 		field2_input = etree.SubElement(field2, 'input', {
 			'name': ('amount%i' % i),
