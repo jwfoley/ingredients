@@ -34,10 +34,12 @@ class Directions (markdown.preprocessors.Preprocessor):
 		return new_lines
 
 
-def generate_ingredient_table (element, form_name = None, scale_name = None, checkbox = True):
+def generate_ingredient_table (element, form_name = None, scale_name = None, default_scale = None, checkbox = True):
 	'''
 	given an lxml.etree.Element of tag 'ingredients', return a new Element in the form of an HTML form containing the interactive table
 	'''
+	
+	# get arguments from input (unless overridden by runtime arguments)
 	if form_name is None:
 		if 'form_name' in element.keys():
 			form_name = element.get('form_name')
@@ -49,6 +51,12 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, che
 			scale_name = element.get('scale_name')
 		else:
 			scale_name = DEFAULT_SCALE_NAME
+	
+	if default_scale is None:
+		if 'default_scale' in element.keys():
+			default_scale = element.get('default_scale')
+		else:
+			default_scale = '1'
 
 	# parse the text contents
 	ingredients = []
@@ -82,7 +90,7 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, che
 	# scale controls
 	scale_function = etree.SubElement(form_root, 'input', {
 		'name': 'scale',
-		'value': '1',
+		'value': default_scale,
 		'onInput': ''
 	})
 	for i in range(len(ingredients)):
@@ -106,7 +114,7 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, che
 		field2 = etree.SubElement(row, 'td')
 		field2_input = etree.SubElement(field2, 'input', {
 			'name': ('amount%i' % i),
-			'value': ingredients[i][1],
+			'value': str(float(default_scale) * float(ingredients[i][1])), # this is where the default scale is applied and errors may ensue
 			'readonly': '' # don't see a way to add boolean attributes, only key + value, so empty value
 		})
 		field2_input.tail = ' ' + ingredients[i][2] # tail will include the rest of the document too
