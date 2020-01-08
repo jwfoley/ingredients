@@ -8,7 +8,13 @@ INGREDIENTS_TAG = 'ingredients' # appears as an HTML tag
 INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 DEFAULT_SCALE_NAME = 'batches'
 
-DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">'] # think harder about where to put this
+DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">\
+<style>\
+input[type=checkbox] {\
+    transform: scale(1.5);\
+    margin-right: 0.5em;\
+}\
+</style>'] # think harder about where to put this
 
 class Directions (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
