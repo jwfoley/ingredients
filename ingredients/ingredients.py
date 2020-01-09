@@ -14,6 +14,12 @@ input[type=checkbox] {\
     transform: scale(1.5);\
     margin-right: 0.5em;\
 }\
+input[type="text"] {\
+    width: 4em;\
+}\
+input[type="number"] {\
+    width: 4em;\
+}\
 </style>'] # think harder about where to put this
 
 class Directions (markdown.preprocessors.Preprocessor):
@@ -95,6 +101,7 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 	
 	# scale controls
 	scale_function = etree.SubElement(form_root, 'input', {
+		'type': 'number',
 		'name': 'scale',
 		'value': default_scale,
 		'onInput': ''
@@ -119,6 +126,7 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 		
 		field2 = etree.SubElement(row, 'td')
 		field2_input = etree.SubElement(field2, 'input', {
+			'type': 'text',
 			'name': ('amount%i' % i),
 			'value': str(float(default_scale) * float(ingredients[i][1])), # this is where the default scale is applied and errors may ensue
 			'readonly': '' # don't see a way to add boolean attributes, only key + value, so empty value
