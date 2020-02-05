@@ -72,11 +72,23 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 
 	# parse the text contents
 	ingredients = []
+	has_common_unit = True
+	common_unit = None
+	total = 0
 	for line in element.text.split('\n'):
 		stripped_line = line.strip()
 		if stripped_line != '':
 			fields = re.split('\s*\|\s*', stripped_line)
-			ingredients.append([fields[0]] + re.split('\s+', fields[1], 1))
+			ingredient = fields[0]
+			amount, unit = re.split('\s+', fields[1], 1)
+			ingredients.append((ingredient, amount, unit))
+			
+			if has_common_unit:
+				total += float(amount)
+				if common_unit is None:
+					common_unit = unit
+				elif unit != common_unit:
+					has_common_unit = False
 		
 	# create the new Element
 		
@@ -98,6 +110,12 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 			'name': ('default%i' % i),
 			'value': ingredients[i][1]
 		}))
+	if has_common_unit:
+		form_root.append(etree.Element('input', {
+			'type': 'hidden',
+			'name': 'default_total',
+			'value': str(total)
+		}))
 	
 	# scale controls
 	scale_function = etree.SubElement(form_root, 'input', {
@@ -108,6 +126,8 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 	})
 	for i in range(len(ingredients)):
 		scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = document.%s.scale.value * document.%s.default%i.value;' % (form_name, i, form_name, form_name, i)))
+	if has_common_unit:
+		scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = document.%s.scale.value * document.%s.default_total.value;' % (form_name, form_name, form_name)))
 	
 	# reset button
 	form_root.append(etree.Element('input', {'type': 'reset', 'value': 'Reset'}))
@@ -115,23 +135,35 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 	# interactive table
 	form_table = etree.SubElement(form_root, 'table')
 	for i in range(len(ingredients)):
+		ingredient, amount, unit = ingredients[i]
 		row = etree.SubElement(form_table, 'tr')
 		
 		field1 = etree.SubElement(row, 'td')
 		if checkbox:
 			field1_checkbox = etree.SubElement(etree.SubElement(field1, 'label'), 'input', {'type': 'checkbox'}) # insert the checkbox input inside a label so the entire text is clickable
-			field1_checkbox.tail = ingredients[i][0]
+			field1_checkbox.tail = ingredient
 		else:
-			field1.text = ingredients[i][0]
+			field1.text = ingredient
 		
 		field2 = etree.SubElement(row, 'td')
 		field2_input = etree.SubElement(field2, 'input', {
 			'type': 'text',
 			'name': ('amount%i' % i),
-			'value': str(float(default_scale) * float(ingredients[i][1])), # this is where the default scale is applied and errors may ensue
+			'value': str(float(default_scale) * float(amount)), # this is where the default scale is applied and errors may ensue
 			'readonly': '' # don't see a way to add boolean attributes, only key + value, so empty value
 		})
-		field2_input.tail = ' ' + ingredients[i][2] # tail will include the rest of the document too
+		field2_input.tail = ' ' + unit # tail will include the rest of the document too
+	
+	# automatic total
+	if has_common_unit:
+		form_table.tail = 'total: '
+		total_box = etree.SubElement(form_root, 'input', {
+			'type': 'text',
+			'name': 'total',
+			'value': str(float(default_scale) * total),
+			'readonly': ''
+		})
+		total_box.tail = ' ' + common_unit
 	
 	return form_root
 
