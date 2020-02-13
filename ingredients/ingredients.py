@@ -4,9 +4,11 @@ from lxml import etree, html
 DIRECTION_REGEX = '^\* \[ \] ' # matches GFM "* [ ] "
 DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label><p>'
 
-INGREDIENTS_TAG = 'ingredients' # appears as an HTML tag
-INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
+INGREDIENT_TAG = 'ingredient' # appears as an HTML tag
+INGREDIENT_TABLE_TAG = 'ingredient_table' # appears as an HTML tag
+INGREDIENT_TABLE_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 DEFAULT_SCALE_NAME = 'batches'
+INGREDIENTS_FORM_NAMES = 'ingredients'
 
 DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">\
 <style>\
@@ -45,10 +47,65 @@ class Directions (markdown.preprocessors.Preprocessor):
 		if in_section: raise RuntimeError('missing %s tag' % DIRECTIONS_CLOSE)
 		return new_lines
 
+def generate_ingredient (element, form_name = None, scale_name = None, default_scale = None):
+	'''
+	given an lxml.etree.Element of tag 'ingredient', return a new Element in the form of an HTML form containing an ingredient and amount with adjustable scale
+	'''
+	# get arguments from input (unless overridden by runtime arguments)
+	# this duplication from generate_ingredient_table seems suboptimal and maybe they could be combined into a universal parser function
+	if form_name is None:
+		if 'form_name' in element.keys():
+			form_name = element.get('form_name')
+		else:
+			form_name = 'ingredient'
+	
+	if scale_name is None:
+		if 'scale_name' in element.keys():
+			scale_name = element.get('scale_name')
+		else:
+			scale_name = DEFAULT_SCALE_NAME
+	
+	if default_scale is None:
+		if 'default_scale' in element.keys():
+			default_scale = element.get('default_scale')
+		else:
+			default_scale = '1'
+	
+	# parse the text contents
+	amount, unit, ingredient = element.text.split(maxsplit = 2)
+	
+	# create the new Element
+	form_root = etree.Element('form', {
+		'name': form_name
+	})
+	form_root.tail = element.tail
+	form_root.append(etree.Element('input', {
+		'type': 'hidden',
+		'name': 'default',
+		'value': amount
+	}))
+	
+	amount_box = etree.SubElement(form_root, 'input', {
+		'type': 'text',
+		'name': 'amount',
+		'value': str(float(default_scale) * float(amount)), # this is where the default scale is applied and errors may ensue
+		'readonly': '' # don't see a way to add boolean attributes, only key + value, so empty value
+	})
+	amount_box.tail = ' ' + unit + ' ' + ingredient + ' (' # can I just add this above
+	
+	scale_function = etree.SubElement(form_root, 'input', {
+		'type': 'number',
+		'name': 'scale',
+		'value': default_scale,
+		'onInput': 'document.%s.amount.value = document.%s.scale.value * document.%s.default.value' % (form_name, form_name, form_name)
+	})
+	scale_function.tail = scale_name + ')'
+	
+	return form_root
 
 def generate_ingredient_table (element, form_name = None, scale_name = None, default_scale = None, checkbox = True):
 	'''
-	given an lxml.etree.Element of tag 'ingredients', return a new Element in the form of an HTML form containing the interactive table
+	given an lxml.etree.Element of tag 'ingredient_table', return a new Element in the form of an HTML form containing the interactive table
 	'''
 	
 	# get arguments from input (unless overridden by runtime arguments)
@@ -94,8 +151,9 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 		
 	form_root = etree.Element('form', {
 		'name': form_name,
-		'style': INGREDIENTS_STYLE
+		'style': INGREDIENT_TABLE_STYLE
 	})
+	form_root.tail = element.tail
 	if 'title' in element.keys():
 		form_title = etree.SubElement(form_root, 'h4')
 		form_title.text = element.get('title')
@@ -171,13 +229,17 @@ def generate_ingredient_table (element, form_name = None, scale_name = None, def
 class Ingredients (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
 		parsed_html = html.fromstring('\n'.join(lines))
-		ingredients_counter = 0
+		ingredient_counter = 0
+		ingredient_table_counter = 0
 		for i in range(len(parsed_html)):
-			if parsed_html[i].tag == INGREDIENTS_TAG:
-				new_element = generate_ingredient_table(parsed_html[i], ('ingredients%i' % ingredients_counter))
-				new_element.tail = parsed_html[i].tail
+			if parsed_html[i].tag == INGREDIENT_TAG:
+				new_element = generate_ingredient(parsed_html[i], ('ingredient%i' % ingredient_counter))
 				parsed_html[i] = new_element
-				ingredients_counter += 1
+				ingredient_counter += 1
+			elif parsed_html[i].tag == INGREDIENT_TABLE_TAG:
+				new_element = generate_ingredient_table(parsed_html[i], ('ingredients%i' % ingredient_table_counter))
+				parsed_html[i] = new_element
+				ingredient_table_counter += 1
 		
 		return DEFAULT_HEADER + html.tostring(parsed_html)[3:-4].decode('utf-8').split('\n') # the [3:-4] is a workaround to remove the unwanted <p> tags added for the root tree
 
