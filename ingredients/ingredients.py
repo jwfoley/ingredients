@@ -211,7 +211,9 @@ def generate_scale(element, ingredients_tables, form_name, scale_name = None, de
 		'value': default_scale,
 		'onInput': ''
 	})
+	reset_button = etree.SubElement(form_root, 'input', {'type': 'reset', 'value': 'Reset', 'onClick': ''})
 	for ingredients_name, ingredient_count, has_common_unit in ingredients_tables:
+		reset_button.set('onClick', reset_button.get('onClick') + ('document.%s.reset();' % ingredients_name))
 		for i in range(ingredient_count):
 			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = document.%s.scale.value * document.%s.default%i.value;' % (ingredients_name, i, form_name, ingredients_name, i)))
 		if has_common_unit:
