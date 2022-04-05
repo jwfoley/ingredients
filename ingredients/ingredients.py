@@ -12,19 +12,19 @@ INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients tab
 SCALE_TAG = 'scale' # appears as an HTML tag
 DEFAULT_SCALE_NAME = 'batches'
 
-DEFAULT_HEADER = ['<meta name="viewport" content="initial-scale=1">\
-<style>\
-input[type=checkbox] {\
-    transform: scale(1.5);\
-    margin-right: 0.5em;\
-}\
-input[type="text"] {\
-    width: 4em;\
-}\
-input[type="number"] {\
-    width: 4em;\
-}\
-</style>'] # think harder about where to put this
+DEFAULT_HEADER = ['''<meta name="viewport" content="initial-scale=1">
+<style>
+input[type=checkbox] {
+	transform: scale(1.5);
+	margin-right: 0.5em;
+}
+input[type="text"] {
+	width: 4em;
+}
+input[type="number"] {
+	width: 4em;
+}
+</style>'''] # think harder about where to put this
 
 class Directions (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
