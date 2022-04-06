@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from lxml import etree, html
 
 # output formats
-DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label><p>'
+DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label>\n' # add another newline to make sure the downstream processor turns these into separate HTML paragraphs (if we add the <p> now, downstream processors won't parse any Markdown inside)
 INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 DEFAULT_SCALE_LABEL = 'batches'
 DEFAULT_HEADER = '''<meta name="viewport" content="initial-scale=1">
@@ -22,7 +22,7 @@ input[type="number"] {
 </style>''' # think harder about where to put this
 
 # input formats
-DIRECTION_REGEX = '^\* \[ \] ' # matches GFM "* [ ] "
+DIRECTION_REGEX = re.compile('^\* \[ \] ') # matches GFM "* [ ] "
 INGREDIENTS_REGEX = re.compile('```\{ingredients,?(.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
 SCALE_REGEX = re.compile('<!scale,?(.*?)>', re.DOTALL)
 
@@ -41,7 +41,7 @@ class Directions (markdown.preprocessors.Preprocessor):
 		in_section = False # track whether we are currently in a direction list (currently not used but might be nice if I use an HTML list)
 		
 		for line in lines:
-			match = re.match(DIRECTION_REGEX, line)
+			match = DIRECTION_REGEX.match(line)
 			
 			if in_section: # currently in a direction list
 				if match: # still in the direction list
