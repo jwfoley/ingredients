@@ -22,7 +22,7 @@ input[type="number"] {
 </style>''' # think harder about where to put this
 
 # input formats
-DIRECTION_REGEX = re.compile('^\* \[ \] ') # matches GFM "* [ ] "
+DIRECTION_REGEX = re.compile('^\* \[ \]\s*(.*)\s*') # matches GFM "* [ ] " and ignores leading and trailing whitespace
 INGREDIENTS_REGEX = re.compile('```\{ingredients,?(.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
 SCALE_REGEX = re.compile('<!scale,?(.*?)>', re.DOTALL)
 
@@ -37,26 +37,7 @@ def parse_opts (text):
 
 class Directions (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
-		new_lines = []
-		in_section = False # track whether we are currently in a direction list (currently not used but might be nice if I use an HTML list)
-		
-		for line in lines:
-			match = DIRECTION_REGEX.match(line)
-			
-			if in_section: # currently in a direction list
-				if match: # still in the direction list
-					new_lines.append(DIRECTIONS_FORMAT % line[match.end():])
-				else: # end of the direction list
-					new_lines.append(line)
-			
-			else: # not currently in a direction list
-				if match: # start of a new direction list
-					new_lines.append(DIRECTIONS_FORMAT % line[match.end():])
-				else: # still not in a direction list
-					new_lines.append(line)
-		
-		if in_section: raise RuntimeError('missing %s tag' % DIRECTIONS_CLOSE)
-		return new_lines
+		return map(lambda line: DIRECTION_REGEX.sub(lambda match: DIRECTIONS_FORMAT % match.groups()[0], line), lines)
 
 @dataclass
 class IngredientTable:
