@@ -1,1 +1,2 @@
-from .ingredients import Directions, Ingredients, IngredientExtension, makeExtension
+from .extension import IngredientExtension, makeExtension
+

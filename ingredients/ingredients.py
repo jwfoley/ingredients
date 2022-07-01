@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from lxml import etree, html
 
 # output formats
-DIRECTIONS_FORMAT = '<label><input type="checkbox">%s</label>\n' # add another newline to make sure the downstream processor turns these into separate HTML paragraphs (if we add the <p> now, downstream processors won't parse any Markdown inside)
 INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 DEFAULT_SCALE_LABEL = 'batches'
 DEFAULT_HEADER = '''<meta name="viewport" content="initial-scale=1">
@@ -22,7 +21,6 @@ input[type="number"] {
 </style>''' # think harder about where to put this
 
 # input formats
-DIRECTION_REGEX = re.compile('^\* \[ \]\s*(.*)\s*') # matches GFM "* [ ] " and ignores leading and trailing whitespace
 INGREDIENTS_REGEX = re.compile('```\{ingredients,?(.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
 SCALE_REGEX = re.compile('<!scale,?(.*?)>', re.DOTALL)
 
@@ -34,10 +32,6 @@ def parse_opts (text):
 	simple hack: make it resemble a dummy HTML tag and use the HTML parser!
 	'''
 	return dict(html.fromstring('<dummy,' + text + '>').items())
-
-class Directions (markdown.preprocessors.Preprocessor):
-	def run (self, lines):
-		return map(lambda line: DIRECTION_REGEX.sub(lambda match: DIRECTIONS_FORMAT % match.groups()[0], line), lines)
 
 @dataclass
 class IngredientTable:
@@ -219,17 +213,4 @@ class Ingredients (markdown.preprocessors.Preprocessor):
 		textwall = SCALE_REGEX.sub(self.generate_scales, textwall)
 		
 		return (DEFAULT_HEADER + textwall).splitlines()
-
-
-class IngredientExtension (markdown.extensions.Extension):
-	def extendMarkdown (self, md):
-		md.preprocessors.register(Ingredients(), 'ingredients', 175) # 175 is the suggested priority in the tutorial
-		md.preprocessors.register(Directions(), 'directions', 174)
-
-def makeExtension (**kwargs):
-	'''
-	the 'markdown' module looks for this function by name
-	'''
-	return IngredientExtension(**kwargs)
-
 
