@@ -5,10 +5,9 @@ from textwrap import wrap
 WRAP_LENGTH = 80 # length of wrapped lines with raw image data
 IMAGE_REGEX = re.compile('!\[(.*?)\]\((.*?)\)\{(.*?)\}', re.DOTALL)
 TAG_REGEX = re.compile('\.inline\s*') # include trailing space to delete it when passing style
-IMAGE_BEFORE = '<img'
-IMAGE_MIDDLE = ' src="data:image;base64,'
-IMAGE_AFTER = '">'
-SVG_REGEX = re.compile(b'<svg.*</svg>')
+IMAGE_FORMAT = '%s<img%s src="data:image;base64,\n%s\n">%s'
+SVG_REGEX = re.compile(b'<svg(.*?)>(.+)</svg>')
+SVG_FORMAT = '%s<svg%s>%s</svg>%s'
 
 class InlineImages (markdown.preprocessors.Preprocessor):
 	def run (self, lines):
@@ -29,23 +28,29 @@ class InlineImages (markdown.preprocessors.Preprocessor):
 			raw_image = open(line_match.group(2), 'rb').read()
 			line_before = line[:line_match.start()]
 			line_after = line[line_match.end():]
+			style = style_sub[0].strip()
+			alt_text = line_match.group(1).strip()
+			attrib_text = (
+				('' if alt_text == '' else (' alt="%s"' % alt_text)) +
+				('' if style == '' else (' style="%s"' % style))
+			)
 			
 			# SVG
 			svg_match = SVG_REGEX.search(raw_image)
 			if svg_match is not None:
-				yield line_before + svg_match.group(0).decode() + line_after
+				yield SVG_FORMAT % (
+					line_before,
+					svg_match.group(1).decode() + attrib_text,
+					svg_match.group(2).decode(),
+					line_after
+				)
 			
 			# not SVG
 			else:
-				alt_text = line_match.group(1).strip()
-				style = style_sub[0].strip()
-				yield (
-					line_before +
-					IMAGE_BEFORE +
-					('' if alt_text == '' else (' alt="%s"' % alt_text)) +
-					('' if style == '' else (' style="%s"' % style)) +
-					IMAGE_MIDDLE
+				yield IMAGE_FORMAT % (
+					line_before,
+					attrib_text,
+					'\n'.join(wrap(b64encode(raw_image).decode(), WRAP_LENGTH)),
+					line_after
 				)
-				for wrap_line in wrap(b64encode(raw_image).decode(), WRAP_LENGTH): yield(wrap_line)
-				yield IMAGE_AFTER + line_after
 
