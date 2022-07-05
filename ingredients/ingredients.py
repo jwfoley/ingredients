@@ -114,7 +114,7 @@ def format_ingredient_table (
 		scale_function = etree.SubElement(form_root, 'input', {
 			'type': 'number',
 			'name': 'scale',
-			'value': str(default_scale),
+			'value': str(int(default_scale) if default_scale.is_integer() else default_scale), # display as integer if it is one
 			'onInput': ''
 		})
 		for i in range(len(table.ingredients)):
@@ -180,7 +180,7 @@ def generate_scale(
 	scale_function = etree.SubElement(form_root, 'input', {
 		'type': 'number',
 		'name': 'scale',
-		'value': str(default_scale),
+		'value': str(int(default_scale) if default_scale.is_integer() else default_scale), # display as integer if it is one
 		'onInput': ''
 	})
 	reset_button = etree.SubElement(form_root, 'input', {'type': 'reset', 'value': 'Reset', 'onClick': ''})
