@@ -6,6 +6,7 @@ from lxml import etree, html
 # output formats
 INGREDIENTS_STYLE = 'margin-left: 3em' # style hardcoded to each ingredients table, currently set to indent it nicely
 DEFAULT_SCALE_LABEL = 'batches'
+DEFAULT_PRECISION = 0.001 # round all calculated numbers to the nearest this (not necessarily a decimal place)
 DEFAULT_HEADER = '''<meta name="viewport" content="initial-scale=1">
 <style>
 input[type=checkbox] {
@@ -21,7 +22,7 @@ input[type="number"] {
 </style>''' # think harder about where to put this
 
 # input formats
-INGREDIENTS_REGEX = re.compile('```\{ingredients,?(.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
+INGREDIENTS_REGEX = re.compile('```\{(ingredients.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
 SCALE_REGEX = re.compile('<!scale,?(.*?)>', re.DOTALL)
 
 
@@ -29,9 +30,9 @@ def parse_opts (text):
 	'''
 	parse a simple batch of options in the form "option1 = value, option2 = value" with spaces optional
 	return a dictionary; keys and values will all be strings
-	simple hack: make it resemble a dummy HTML tag and use the HTML parser!
+	simple hack: use the HTML parser!
 	'''
-	return dict(html.fromstring('<dummy,' + text + '>').items())
+	return dict(html.fromstring('<%s>' % text).items())
 
 @dataclass
 class IngredientTable:
@@ -71,11 +72,16 @@ def format_ingredient_table (
 	scale = None,
 	scale_label = DEFAULT_SCALE_LABEL,
 	default_scale = 1,
+	precision = DEFAULT_PRECISION,
 	checkbox = True
 ):
 	'''
 	given an IngredientTable, return an HTML form containing the interactive table
 	'''
+	
+	# values may be str if parsed from option tags; may have extraneous comma from HTML tag parser
+	if type(default_scale) is str: default_scale = float(default_scale.strip(','))
+	if type(precision) is str: precision = float(precision.strip(','))
 	
 	# create the new Element
 	form_root = etree.Element('form', {
@@ -108,13 +114,13 @@ def format_ingredient_table (
 		scale_function = etree.SubElement(form_root, 'input', {
 			'type': 'number',
 			'name': 'scale',
-			'value': default_scale,
+			'value': str(default_scale),
 			'onInput': ''
 		})
 		for i in range(len(table.ingredients)):
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = document.%s.scale.value * document.%s.default%i.value;' % (name, i, name, name, i)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = Math.round(document.%s.scale.value * document.%s.default%i.value / %f) * %f;' % (name, i, name, name, i, precision, precision)))
 		if table.total is not None:
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = document.%s.scale.value * document.%s.default_total.value;' % (name, name, name)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = Math.round(document.%s.scale.value * document.%s.default_total.value / %f) * %f;' % (name, name, name, precision, precision)))
 		
 		# reset button
 		form_root.append(etree.Element('input', {'type': 'reset', 'value': 'Reset'}))
@@ -136,7 +142,7 @@ def format_ingredient_table (
 		field2_input = etree.SubElement(field2, 'input', {
 			'type': 'text',
 			'name': ('amount%i' % i),
-			'value': str(float(default_scale) * float(amount)), # this is where the default scale is applied and errors may ensue
+			'value': str(round(default_scale * float(amount) / precision) * precision), # this is where the default scale is applied and errors may ensue
 			'readonly': '' # don't see a way to add boolean attributes, only key + value, so empty value
 		})
 		field2_input.tail = ' ' + unit # tail will include the rest of the document too
@@ -147,33 +153,43 @@ def format_ingredient_table (
 		total_box = etree.SubElement(form_root, 'input', {
 			'type': 'text',
 			'name': 'total',
-			'value': str(float(default_scale) * table.total),
+			'value': str(round(default_scale * table.total / precision) * precision),
 			'readonly': ''
 		})
 		total_box.tail = ' ' + table.ingredients[0][2] # unit, assuming all consistent because the total was given
 	
 	return html.tostring(form_root).decode('utf-8')
 
-def generate_scale(ingredients_tables, name, scale_label = DEFAULT_SCALE_LABEL, default_scale = 1):
+def generate_scale(
+	ingredients_tables,
+	name,
+	scale_label = DEFAULT_SCALE_LABEL,
+	default_scale = 1,
+	precision = DEFAULT_PRECISION
+):
 	'''
 	given a list of ingredient table names and lengths, return an HTML form containing the interactive scale adjuster
 	'''
+	
+	# values may be str if parsed from option tags; may have extraneous comma from HTML tag parser
+	if type(default_scale) is str: default_scale = float(default_scale.strip(','))
+	if type(precision) is str: precision = float(precision.strip(','))
 	
 	form_root = etree.Element('form', {'name': name})
 	form_root.text = scale_label + ': '
 	scale_function = etree.SubElement(form_root, 'input', {
 		'type': 'number',
 		'name': 'scale',
-		'value': default_scale,
+		'value': str(default_scale),
 		'onInput': ''
 	})
 	reset_button = etree.SubElement(form_root, 'input', {'type': 'reset', 'value': 'Reset', 'onClick': ''})
 	for ingredients_name, ingredient_count, has_common_unit in ingredients_tables:
 		reset_button.set('onClick', reset_button.get('onClick') + ('document.%s.reset();' % ingredients_name))
 		for i in range(ingredient_count):
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = document.%s.scale.value * document.%s.default%i.value;' % (ingredients_name, i, name, ingredients_name, i)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = Math.round(document.%s.scale.value * document.%s.default%i.value / %f) * %f;' % (ingredients_name, i, name, ingredients_name, i, precision, precision)))
 		if has_common_unit:
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = document.%s.scale.value * document.%s.default_total.value;' % (ingredients_name, name, ingredients_name)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = Math.round(document.%s.scale.value * document.%s.default_total.value / %f) * %f;' % (ingredients_name, name, ingredients_name, precision, precision)))
 	
 	return html.tostring(form_root).decode('utf-8')
 
