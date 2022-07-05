@@ -23,7 +23,7 @@ input[type="number"] {
 
 # input formats
 INGREDIENTS_REGEX = re.compile('```\{(ingredients.*?)\}(.*?)```', re.DOTALL) # returns the options and the table as groups
-SCALE_REGEX = re.compile('<!scale,?(.*?)>', re.DOTALL)
+SCALE_REGEX = re.compile('<!(scale.*?)>', re.DOTALL)
 
 
 def parse_opts (text):
