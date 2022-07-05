@@ -118,9 +118,9 @@ def format_ingredient_table (
 			'onInput': ''
 		})
 		for i in range(len(table.ingredients)):
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.amount%i.value = Math.round(document.%s.scale.value * document.%s.default%i.value / %f) * %f;' % (name, i, name, name, i, precision, precision)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('amount%i.value = Math.round(scale.value * default%i.value / %f) * %f;' % (i, i, precision, precision)))
 		if table.total is not None:
-			scale_function.set('onInput', scale_function.get('onInput') + ('document.%s.total.value = Math.round(document.%s.scale.value * document.%s.default_total.value / %f) * %f;' % (name, name, name, precision, precision)))
+			scale_function.set('onInput', scale_function.get('onInput') + ('total.value = Math.round(scale.value * default_total.value / %f) * %f;' % (precision, precision)))
 		
 		# reset button
 		form_root.append(etree.Element('input', {'type': 'reset', 'value': 'Reset'}))
